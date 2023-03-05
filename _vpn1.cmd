@@ -26,6 +26,7 @@ if "%~1"=="/LPipe" goto :/LPipe
 if "%~1"=="/RPipe" goto :/RPipe
 
 "%~f0" /LPipe | "%~f0" /RPipe
+pause
 exit /b
 
 
