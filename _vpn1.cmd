@@ -1,20 +1,24 @@
 @echo off
 
+REM ================================================
+REM Fetch Secrets from CyberArk Secrets Manager
+REM ================================================
+
 set cp_dir=C:\Program Files (x86)\CyberArk\ApplicationPasswordSdk
 SET PATH=%PATH%;%cp_dir%
 
-for /f "delims=" %%a in ('CLIPasswordSDK.exe GetPassword /p AppDescs.AppID^=CiscoAnyConnectClient /p Query^="Safe=VPN;Folder=Root;Object=Security Appliance-CiscoAnyConnectVPN-connect.example.com-someone" /o Password') do set pwd=%%a 
+REM Construct the path to credentials in CyberArk Vault using logged on user name
+set path_vpn_cred=Safe^=VPN;Folder^=Root;Object^=Security Appliance-CiscoAnyConnectVPN-%username%
 
-for /f "delims=" %%a in ('CLIPasswordSDK.exe GetPassword /p AppDescs.AppID^=CiscoAnyConnectClient /p Query^="Safe=VPN;Folder=Root;Object=Security Appliance-CiscoAnyConnectVPN-connect.example.com-someone" /o PassProps.UserName') do set user_id=%%a 
-
-for /f "delims=" %%a in ('CLIPasswordSDK.exe GetPassword /p AppDescs.AppID^=CiscoAnyConnectClient /p Query^="Safe=VPN;Folder=Root;Object=Security Appliance-CiscoAnyConnectVPN-connect.example.com-someone" /o PassProps.Address') do set cybr_vpn_host=%%a 
+for /f "delims=" %%a in ('CLIPasswordSDK.exe GetPassword /p AppDescs.AppID^=CiscoAnyConnectClient /p Query^="%%path_vpn_cred%%" /o Password') do set pwd=%%a 
+for /f "delims=" %%a in ('CLIPasswordSDK.exe GetPassword /p AppDescs.AppID^=CiscoAnyConnectClient /p Query^="%%path_vpn_cred%%" /o PassProps.UserName') do set user_id=%%a 
+for /f "delims=" %%a in ('CLIPasswordSDK.exe GetPassword /p AppDescs.AppID^=CiscoAnyConnectClient /p Query^="%%path_vpn_cred%%" /o PassProps.Address') do set cybr_vpn_host=%%a 
 
 CALL :TRIM %pwd% pwd
 CALL :TRIM %user_id% user_id
 
-rem echo %user_id%
-rem echo %pwd%
-
+REM ================================================
+REM Login to VPN
 REM ================================================
 
 taskkill /IM "vpnui.exe" /F > nul 2> nul
@@ -28,7 +32,6 @@ if "%~1"=="/RPipe" goto :/RPipe
 "%~f0" /LPipe | "%~f0" /RPipe
 pause
 exit /b
-
 
 :/LPipe
 REM This will be executed inside a pipe but in batch context
